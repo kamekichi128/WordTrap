@@ -1212,7 +1212,7 @@ function createWasm() {
     // This assertion doesn't hold when emscripten is run in --post-link
     // mode.
     // TODO(sbc): Read INITIAL_MEMORY out of the wasm file in post-link mode.
-    //assert(wasmMemory.buffer.byteLength === 33554432);
+    //assert(wasmMemory.buffer.byteLength === 1073741824);
     updateMemoryViews();
 
     wasmTable = Module['asm']['__indirect_function_table'];
@@ -12470,7 +12470,7 @@ function dbg(text) {
       for (var cutDown = 1; cutDown <= 4; cutDown *= 2) {
         var overGrownHeapSize = oldSize * (1 + 0.2 / cutDown); // ensure geometric growth
         // but limit overreserving (default to capping at +96MB overgrowth at most)
-        overGrownHeapSize = Math.min(overGrownHeapSize, requestedSize + 100663296 );
+        overGrownHeapSize = Math.min(overGrownHeapSize, requestedSize + 536870912 );
   
         var newSize = Math.min(maxHeapSize, alignUp(Math.max(requestedSize, overGrownHeapSize), 65536));
   
