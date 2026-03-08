@@ -199,10 +199,20 @@ namespace Shiritori
             var baseUrl = Application.absoluteURL;
             if (!string.IsNullOrEmpty(baseUrl))
             {
-                // URLの末尾から不要な部分を削除
+                // URLの末尾から不要な部分(index.htmlなど)を削除
                 var uri = new Uri(baseUrl);
-                var basePath = uri.GetLeftPart(UriPartial.Authority) + "/StreamingAssets";
-                return basePath + "/" + relativePath.TrimStart('/');
+                var pathAndQuery = uri.PathAndQuery;
+                
+                // index.htmlやファイル名を削除してディレクトリパスを取得
+                var lastSlashIndex = pathAndQuery.LastIndexOf('/');
+                if (lastSlashIndex >= 0)
+                {
+                    pathAndQuery = pathAndQuery.Substring(0, lastSlashIndex);
+                }
+                
+                // StreamingAssetsパスを追加
+                var fullPath = uri.GetLeftPart(UriPartial.Authority) + pathAndQuery + "/StreamingAssets/" + relativePath.TrimStart('/');
+                return fullPath;
             }
 
             // フォールバック
@@ -225,6 +235,24 @@ namespace Shiritori
                 relativePath = relativePath.Substring("StreamingAssets/".Length);
             }
 
+            // WebGLビルドの場合、Application.absoluteURLからベースパスを構築
+            var baseUrl = Application.absoluteURL;
+            if (!string.IsNullOrEmpty(baseUrl))
+            {
+                var uri = new Uri(baseUrl);
+                var pathAndQuery = uri.PathAndQuery;
+                
+                // index.htmlやファイル名を削除してディレクトリパスを取得
+                var lastSlashIndex = pathAndQuery.LastIndexOf('/');
+                if (lastSlashIndex >= 0)
+                {
+                    pathAndQuery = pathAndQuery.Substring(0, lastSlashIndex);
+                }
+                
+                return uri.GetLeftPart(UriPartial.Authority) + pathAndQuery + "/StreamingAssets/" + relativePath.TrimStart('/');
+            }
+
+            // フォールバック
             var basePath = (Application.streamingAssetsPath ?? "StreamingAssets").TrimEnd('/');
             return basePath + "/" + relativePath.TrimStart('/');
         }
