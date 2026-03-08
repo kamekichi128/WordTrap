@@ -6,6 +6,24 @@
     <title>Unity Web Player | WordTrap</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
+    
+    <!-- Service Worker登録 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(
+                (registration) => {
+                    console.log('Service Worker registered:', registration);
+                    // Service Workerが有効になったらリロード
+                    if (!navigator.serviceWorker.controller) {
+                        window.location.reload();
+                    }
+                },
+                (error) => {
+                    console.error('Service Worker registration failed:', error);
+                }
+            );
+        }
+    </script>
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
