@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>WordTrap</title>
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no" />
+    <link rel="stylesheet" href="TemplateData/style.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@wllama/wllama@latest/dist/wllama.min.js"></script>
+    <script src="StreamingAssets/EasyLocalLLM/WebGL/EasyLocalLLMLlamaBridgeRuntime.js"></script>
+</head>
+
+<body>
+    <div id="unity-container" class="unity-desktop">
+        <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
+        <div id="unity-loading-bar">
+            <div id="unity-progress-bar-empty">
+                <div id="unity-progress-bar-full"></div>
+            </div>
+        </div>
+        <div id="unity-footer">
+            <div id="unity-build-title">WordTrap</div>
+            <button id="unity-fullscreen-button" type="button">Fullscreen</button>
+        </div>
+    </div>
+
+    <script>
+        var canvas = document.querySelector("#unity-canvas");
+        var loadingBar = document.querySelector("#unity-loading-bar");
+        var progressBarFull = document.querySelector("#unity-progress-bar-full");
+        var fullscreenButton = document.querySelector("#unity-fullscreen-button");
+
+        function unityShowBanner(msg, type) {
+            if (type === "error") {
+                console.error(msg);
+            } else if (type === "warning") {
+                console.warn(msg);
+            } else {
+                console.log(msg);
+            }
+        }
+
+        var buildUrl = "Build";
+        var loaderUrl = buildUrl + "/Build.loader.js";
+        var config = {
+            dataUrl: buildUrl + "/Build.data",
+            frameworkUrl: buildUrl + "/Build.framework.js",
+        codeUrl: buildUrl + "/Build.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+            companyName: "Kamekichi Games",
+                productName: "WordTrap",
+                    productVersion: "1.0",
+                        showBanner: unityShowBanner,
+      };
+
+        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            document.querySelector("#unity-container").className = "unity-mobile";
+            canvas.className = "unity-mobile";
+        }
+
+        loadingBar.style.display = "block";
+
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        script.onload = function () {
+            createUnityInstance(canvas, config, function (progress) {
+                progressBarFull.style.width = 100 * progress + "%";
+            }).then(function (unityInstance) {
+                loadingBar.style.display = "none";
+                fullscreenButton.onclick = function () {
+                    document.makeFullscreen('unity-container');
+                };
+            }).catch(function (message) {
+                alert(message);
+            });
+        };
+        document.body.appendChild(script);
+    </script>
+</body>
+
+</html>
