@@ -154,7 +154,7 @@ namespace Shiritori
         ContextSize = contextSize,
         UseWebGpu = useWebGpu,
         WasmBaseUrl = wasmBaseUrl,
-        DebugMode = true,
+        DebugMode = false,
         InitTimeoutSeconds = 600f
     };
 
@@ -165,7 +165,7 @@ namespace Shiritori
         ServerUrl = ollamaServerUrl,
         DefaultModelName = ollamaModelName,
         AutoStartServer = false,
-        DebugMode = true,
+        DebugMode = false,
         MaxRetries = 2,
         RetryDelaySeconds = 1.0f
     };
@@ -389,7 +389,8 @@ namespace Shiritori
                 WaitIfBusy = true,
                 Priority = 100,
                 Temperature = 0.7f,
-                SystemPrompt = BuildNpcSystemPrompt()
+                SystemPrompt = BuildNpcSystemPrompt(),
+                NumPredict = 100
             };
 
             var finished = false;

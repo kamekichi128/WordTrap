@@ -953,8 +953,8 @@ MonoBehaviour:
   logLabel: {fileID: 1053921708}
   webglModelRelativePath: https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf
   webglWasmBasePath: llama-wasm
-  useWebGpu: 1
-  contextSize: 2048
+  useWebGpu: 0
+  contextSize: 1024
   ollamaServerUrl: http://localhost:11434
   ollamaModelName: mistral
   dictionaryCsvResourcePath: WordTrap/dictionary
