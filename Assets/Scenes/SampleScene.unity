@@ -951,13 +951,14 @@ MonoBehaviour:
   sendButton: {fileID: 1530576618}
   surrenderButton: {fileID: 643003836}
   logLabel: {fileID: 1053921708}
-  webglModelRelativePath: EasyLocalLLM/models/qwen2.5-0.5b-instruct-q4_k_m.gguf
+  webglModelRelativePath: https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf
   webglWasmBasePath: llama-wasm
   useWebGpu: 1
   contextSize: 2048
   ollamaServerUrl: http://localhost:11434
   ollamaModelName: mistral
   dictionaryCsvResourcePath: WordTrap/dictionary
+  loadingTimeoutSeconds: 300
 --- !u!4 &724959362
 Transform:
   m_ObjectHideFlags: 0

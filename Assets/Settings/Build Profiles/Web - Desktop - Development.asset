@@ -595,7 +595,7 @@ MonoBehaviour:
     - line: '|   webGLDebugSymbols: 0'
     - line: '|   webGLEmscriptenArgs: '
     - line: '|   webGLModulesDirectory: '
-    - line: '|   webGLTemplate: APPLICATION:Default'
+    - line: '|   webGLTemplate: PROJECT:EasyLocalLLM'
     - line: '|   webGLAnalyzeBuildSize: 0'
     - line: '|   webGLUseEmbeddedResources: 0'
     - line: '|   webGLCompressionFormat: 2'
@@ -758,4 +758,4 @@ MonoBehaviour:
         m_CodeOptimization: 0
         m_WebGLClientBrowserPath: 
         m_WebGLClientBrowserType: 0
-        m_WebGLTextureSubtarget: 1
+        m_WebGLTextureSubtarget: 0

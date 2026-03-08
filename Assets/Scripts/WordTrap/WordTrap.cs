@@ -23,7 +23,7 @@ namespace Shiritori
         [SerializeField] private TMP_Text logLabel;
 
         [Header("WebGL (wllama)")]
-        [SerializeField] private string webglModelRelativePath = "EasyLocalLLM/models/qwen2.5-0.5b-instruct-q4_k_m.gguf";
+        [SerializeField] private string webglModelRelativePath = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf";
         [SerializeField] private string webglWasmBasePath = "llama-wasm";
         [SerializeField] private bool useWebGpu = true;
         [SerializeField] private int contextSize = 2048;
@@ -35,9 +35,13 @@ namespace Shiritori
         [Header("Dictionary")]
         [SerializeField] private string dictionaryCsvResourcePath = "WordTrap/dictionary";
 
+        [Header("Model Loading")]
+        [SerializeField] private float loadingTimeoutSeconds = 300f;
+
         private IChatLLMClient client;
         private bool isGameActive;
         private bool isBusy;
+        private bool isModelLoaded;
 
         private string currentSecretWord = string.Empty;
         private string currentSecretWordNormalized = string.Empty;
@@ -56,7 +60,7 @@ namespace Shiritori
             }
 
             RegisterUiEvents();
-            StartNewGame();
+            StartCoroutine(LoadModelAndStartGame());
         }
 
         private void OnDestroy()
@@ -64,34 +68,109 @@ namespace Shiritori
             UnregisterUiEvents();
         }
 
+        private IEnumerator LoadModelAndStartGame()
+        {
+            isModelLoaded = false;
+            SetControlsInteractable(false);
+            
+            UpdateWordLabel("モデル読み込み中...");
+            AddLog("モデルの読み込みを開始しています...");
+
+            var modelName = GetModelName();
+            var loadSucceeded = false;
+
+            yield return client.LoadModelRunnable(
+                modelName,
+                loadingTimeoutSeconds,
+                progress =>
+                {
+                    var progressPercent = Mathf.RoundToInt((float)progress.Progress * 100);
+                    UpdateWordLabel($"モデル読み込み中... {progressPercent}%");
+                    logBuilder.Clear();
+                    AddLog($"[{progressPercent}%] {progress.Message}");
+
+                    if (progress.IsCompleted)
+                    {
+                        if (progress.IsSuccessed)
+                        {
+                            loadSucceeded = true;
+                            AddLog("モデルの読み込みが完了しました。");
+                        }
+                        else
+                        {
+                            AddLog($"モデルの読み込みに失敗: {progress.Message}");
+                        }
+                    }
+                }
+            );
+
+            if (loadSucceeded)
+            {
+                isModelLoaded = true;
+                StartNewGame();
+            }
+            else
+            {
+                UpdateWordLabel("モデル読み込み失敗");
+                AddLog("ゲームを開始できません。");
+                
+                if (surrenderButton != null)
+                {
+                    var buttonText = surrenderButton.GetComponentInChildren<TMP_Text>();
+                    if (buttonText != null)
+                    {
+                        buttonText.text = "再試行";
+                    }
+                    surrenderButton.onClick.RemoveAllListeners();
+                    surrenderButton.onClick.AddListener(() => StartCoroutine(LoadModelAndStartGame()));
+                    surrenderButton.interactable = true;
+                }
+            }
+        }
+
+        private string GetModelName()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return System.IO.Path.GetFileNameWithoutExtension(webglModelRelativePath) ?? "webgl-model";
+#else
+            return ollamaModelName;
+#endif
+        }
+
         private void InitializeClient()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            var modelUrl = ResolveWebGlModelUrl(webglModelRelativePath);
-            var wasmBaseUrl = ResolveWebGlWasmBaseUrl(webglWasmBasePath);
+    var modelUrl = ResolveWebGlModelUrl(webglModelRelativePath);
+    var wasmBaseUrl = ResolveWebGlWasmBaseUrl(webglWasmBasePath);
 
-            var webglConfig = new WllamaConfig
-            {
-                ModelUrl = modelUrl,
-                ContextSize = contextSize,
-                UseWebGpu = useWebGpu,
-                WasmBaseUrl = wasmBaseUrl,
-                DebugMode = true
-            };
+    Debug.Log($"[WordTrap] Application.absoluteURL: {Application.absoluteURL}");
+    Debug.Log($"[WordTrap] Application.streamingAssetsPath: {Application.streamingAssetsPath}");
+    Debug.Log($"[WordTrap] Resolved ModelUrl: {modelUrl}");
+    Debug.Log($"[WordTrap] Resolved WasmBaseUrl: {wasmBaseUrl}");
 
-            client = LLMClientFactory.CreateWllamaClient(webglConfig);
+    var webglConfig = new WllamaConfig
+    {
+        ModelUrl = modelUrl,
+        ContextSize = contextSize,
+        UseWebGpu = useWebGpu,
+        WasmBaseUrl = wasmBaseUrl,
+        DebugMode = true,
+        InitTimeoutSeconds = 600f
+    };
+
+    client = LLMClientFactory.CreateWllamaClient(webglConfig);
 #else
-            var ollamaConfig = new OllamaConfig
-            {
-                ServerUrl = ollamaServerUrl,
-                DefaultModelName = ollamaModelName,
-                AutoStartServer = false,
-                DebugMode = true,
-                MaxRetries = 2,
-                RetryDelaySeconds = 1.0f
-            };
+    var ollamaConfig = new OllamaConfig
+    {
+        ServerUrl = ollamaServerUrl,
+        DefaultModelName = ollamaModelName,
+        AutoStartServer = false,
+        DebugMode = true,
+        MaxRetries = 2,
+        RetryDelaySeconds = 1.0f
+    };
 
-            client = LLMClientFactory.CreateOllamaClient(ollamaConfig);
+    client = LLMClientFactory.CreateOllamaClient(ollamaConfig);
 #endif
         }
 
@@ -102,7 +181,33 @@ namespace Shiritori
 
         private static string ResolveWebGlWasmBaseUrl(string configuredPath)
         {
-            return CombineWithStreamingAssetsPath(configuredPath, "llama-wasm");
+            var relativePath = string.IsNullOrWhiteSpace(configuredPath) ? "llama-wasm" : configuredPath.Trim();
+
+            if (relativePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                relativePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                return relativePath;
+            }
+
+            // Unity Playでは StreamingAssets への相対パスを使用
+            if (relativePath.StartsWith("StreamingAssets/", StringComparison.OrdinalIgnoreCase))
+            {
+                relativePath = relativePath.Substring("StreamingAssets/".Length);
+            }
+
+            // Unity Playの場合、絶対URLを生成
+            var baseUrl = Application.absoluteURL;
+            if (!string.IsNullOrEmpty(baseUrl))
+            {
+                // URLの末尾から不要な部分を削除
+                var uri = new Uri(baseUrl);
+                var basePath = uri.GetLeftPart(UriPartial.Authority) + "/StreamingAssets";
+                return basePath + "/" + relativePath.TrimStart('/');
+            }
+
+            // フォールバック
+            var streamingPath = (Application.streamingAssetsPath ?? "StreamingAssets").TrimEnd('/');
+            return streamingPath + "/" + relativePath.TrimStart('/');
         }
 
         private static string CombineWithStreamingAssetsPath(string configuredPath, string fallbackRelativePath)
@@ -162,6 +267,12 @@ namespace Shiritori
 
         private void StartNewGame()
         {
+            if (!isModelLoaded)
+            {
+                AddLog("モデルがまだ読み込まれていません。");
+                return;
+            }
+
             if (!TryPickSecretWord(out var secretWord))
             {
                 AddLog("辞書に単語がありません。ゲームを開始できません。");
