@@ -1,0 +1,3 @@
+[submodule "Assets/EasyLocalLLM"]
+	path = Assets/EasyLocalLLM
+	url = https://github.com/kamekichi128/EasyLocalLLM
